@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  opsmind-workflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opsmind-workflow
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      SERVICE_NAME: opsmind-workflow
+      DB_HOST: opsmind-mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root_password
+      DB_DATABASE: workflow_db
+      DB_CONNECTION_LIMIT: 10
+      DB_WAIT_FOR_CONNECTIONS: "true"
+      AUTH_SERVICE_URL: http://opsmind-author:3001
+      TICKET_SERVICE_URL: http://opsmind-ticket:3002
+      LOG_LEVEL: info
+    depends_on:
+      opsmind-mysql:
+        condition: service_healthy
+    networks:
+      - opsmind
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+
+  opsmind-mysql:
+    image: mysql:8.0
+    container_name: opsmind-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: workflow_db
+    volumes:
+      - workflow_db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - opsmind
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  workflow_db_data:
+
+networks:
+  opsmind:
+    driver: bridge
