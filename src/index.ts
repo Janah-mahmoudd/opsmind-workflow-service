@@ -2,22 +2,20 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { createApp } from './app';
-import { pool } from './config/database';
+import { pool, waitForDatabase } from './config/database';
 import { startSlaMonitor } from './jobs/slaMonitor';
 
 const PORT: number = parseInt(process.env.PORT || '3003', 10);
 
 async function main(): Promise<void> {
   try {
-    // ── Verify database connection ──
-    const connection = await pool.getConnection();
-    console.log('✅ MySQL connection established');
-    connection.release();
+    // ── Wait for MySQL (retries with backoff — essential for Docker) ──
+    await waitForDatabase();
 
     // ── Create and start Express app ──
     const app = createApp();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Workflow Service running on port ${PORT}`);
       console.log(`📡 Health check: http://localhost:${PORT}/health`);
       console.log(`🔀 Workflow API:  http://localhost:${PORT}/workflow`);

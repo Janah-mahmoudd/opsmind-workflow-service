@@ -9,8 +9,8 @@ import { ExternalTicket, ExternalUser } from '../interfaces/types';
  * - Timeout configuration prevents hanging requests
  */
 
-const AUTH_SERVICE_URL: string = process.env.AUTH_SERVICE_URL || 'http://opsmind-author:3001';
-const TICKET_SERVICE_URL: string = process.env.TICKET_SERVICE_URL || 'http://opsmind-ticket:3002';
+const AUTH_SERVICE_URL: string = process.env.AUTH_SERVICE_URL || 'http://opsmind-auth-service:3002';
+const TICKET_SERVICE_URL: string = process.env.TICKET_SERVICE_URL || 'http://opsmind-ticket-service:3000';
 
 // ---------- Axios Instances ----------
 

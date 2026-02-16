@@ -2,6 +2,8 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 
 import workflowRoutes from './routes/workflowRoutes';
 import adminRoutes from './routes/adminRoutes';
@@ -28,17 +30,39 @@ export function createApp(): Application {
   app.use(morgan('dev'));
   app.use(requestLogger);
 
-  // ── Health Check ──
-  app.get('/health', (_req: Request, res: Response) => {
-    res.status(200).json({
-      status: 'OK',
-      service: process.env.SERVICE_NAME || 'opsmind-workflow',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    });
+  // ── Health Check (with DB verification) ──
+  app.get('/health', async (_req: Request, res: Response) => {
+    try {
+      const { pool } = await import('./config/database');
+      await pool.execute('SELECT 1');
+      res.status(200).json({
+        status: 'OK',
+        service: process.env.SERVICE_NAME || 'opsmind-workflow',
+        database: 'connected',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        status: 'ERROR',
+        service: process.env.SERVICE_NAME || 'opsmind-workflow',
+        database: 'disconnected',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 
   // ── Routes ──
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'OpsMind Workflow API Docs',
+  }));
+  app.get('/api-docs.json', (_req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+
   app.use('/workflow', workflowRoutes);
   app.use('/admin', adminRoutes);
 

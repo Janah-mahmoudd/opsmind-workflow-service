@@ -1,6 +1,7 @@
 -- Workflow Service Database Schema
 -- Database: workflow_db
 
+CREATE DATABASE IF NOT EXISTS workflow_db;
 USE workflow_db;
 
 -- Support Groups Table

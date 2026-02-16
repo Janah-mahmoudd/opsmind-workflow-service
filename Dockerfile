@@ -14,18 +14,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+
 RUN apk add --no-cache dumb-init
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY db ./db
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3003/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+EXPOSE 3003
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=5 \
+  CMD wget --spider --quiet http://127.0.0.1:3003/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/index.js"]
-
-EXPOSE 3003
