@@ -23,7 +23,7 @@ export function validateBody(schema: Joi.ObjectSchema) {
 // ── Predefined Schemas ──
 
 export const routeTicketSchema = Joi.object({
-  ticketId: Joi.number().integer().required(),
+  ticketId: Joi.string().uuid().required(),
   building: Joi.string().required(),
   floor: Joi.number().integer().required(),
 });

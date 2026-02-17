@@ -13,7 +13,7 @@ export class RoutingService {
   private routingRepo = new TicketRoutingStateRepository();
   private logRepo = new WorkflowLogRepository();
 
-  async routeTicket(ticketId: number, building: string, floor: number): Promise<RouteTicketResponse> {
+  async routeTicket(ticketId: string, building: string, floor: number): Promise<RouteTicketResponse> {
     const group = await this.groupRepo.getGroupByBuildingAndFloor(building, floor);
 
     if (!group) {
@@ -38,7 +38,7 @@ export class RoutingService {
     };
   }
 
-  async getTicketRouting(ticketId: number): Promise<TicketRoutingStateRow | null> {
+  async getTicketRouting(ticketId: string): Promise<TicketRoutingStateRow | null> {
     return this.routingRepo.getByTicketId(ticketId);
   }
 

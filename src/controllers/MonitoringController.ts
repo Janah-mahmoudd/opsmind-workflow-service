@@ -14,7 +14,7 @@ export class MonitoringController {
   /** GET /workflow/dashboard/audit/:ticketId */
   getAuditTrail = async (req: Request, res: Response): Promise<void> => {
     try {
-      const ticketId = parseInt(req.params.ticketId, 10);
+      const ticketId = req.params.ticketId;
       const trail = await this.loggingService.getTicketAuditTrail(ticketId);
       res.status(200).json({ success: true, data: trail });
     } catch (error: any) {

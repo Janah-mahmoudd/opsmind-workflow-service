@@ -11,7 +11,7 @@ interface WorkflowLogRowData extends WorkflowLogRow, RowDataPacket {}
  * Never UPDATE or DELETE logs.
  */
 export class WorkflowLogRepository {
-  async logAction(ticketId: number, action: WorkflowAction, data: WorkflowLogData = {}): Promise<{ id: number }> {
+  async logAction(ticketId: string, action: WorkflowAction, data: WorkflowLogData = {}): Promise<{ id: number }> {
     const sql = `
       INSERT INTO workflow_logs
         (ticket_id, action, from_group_id, to_group_id, from_member_id, to_member_id, performed_by, reason)
@@ -30,7 +30,7 @@ export class WorkflowLogRepository {
     return { id: result.insertId };
   }
 
-  async getTicketLogs(ticketId: number): Promise<WorkflowLogRow[]> {
+  async getTicketLogs(ticketId: string): Promise<WorkflowLogRow[]> {
     const sql = `
       SELECT * FROM workflow_logs
       WHERE ticket_id = ?

@@ -9,11 +9,11 @@ import { WorkflowAction, WorkflowLogData, WorkflowLogRow } from '../interfaces/t
 export class LoggingService {
   private logRepo = new WorkflowLogRepository();
 
-  async logAction(ticketId: number, action: WorkflowAction, data: WorkflowLogData = {}): Promise<{ id: number }> {
+  async logAction(ticketId: string, action: WorkflowAction, data: WorkflowLogData = {}): Promise<{ id: number }> {
     return this.logRepo.logAction(ticketId, action, data);
   }
 
-  async getTicketAuditTrail(ticketId: number) {
+  async getTicketAuditTrail(ticketId: string) {
     const logs = await this.logRepo.getTicketLogs(ticketId);
     return {
       ticketId,

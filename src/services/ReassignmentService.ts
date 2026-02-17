@@ -20,7 +20,7 @@ export class ReassignmentService {
   private logRepo = new WorkflowLogRepository();
 
   async reassignTicket(
-    ticketId: number,
+    ticketId: string,
     fromUserId: number,
     toMemberId: number,
     userRole: UserRole,

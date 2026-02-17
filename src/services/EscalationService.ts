@@ -23,7 +23,7 @@ export class EscalationService {
   private ruleRepo = new EscalationRuleRepository();
 
   async escalateTicket(
-    ticketId: number,
+    ticketId: string,
     triggerType: EscalationTrigger,
     performedBy: number | null,
   ): Promise<EscalateTicketResponse> {
@@ -63,7 +63,7 @@ export class EscalationService {
     };
   }
 
-  async manualEscalate(ticketId: number, userId: number, userRole: UserRole): Promise<EscalateTicketResponse> {
+  async manualEscalate(ticketId: string, userId: number, userRole: UserRole): Promise<EscalateTicketResponse> {
     if (userRole !== 'SENIOR' && userRole !== 'SUPERVISOR') {
       throw new Error(`Only Seniors and Supervisors can escalate. User role: ${userRole}`);
     }
@@ -71,7 +71,7 @@ export class EscalationService {
   }
 
   async escalateIfCritical(
-    ticketId: number,
+    ticketId: string,
     isCritical: boolean,
   ): Promise<EscalateTicketResponse | { success: false; message: string }> {
     if (!isCritical) return { success: false, message: 'Ticket is not critical' };
@@ -79,7 +79,7 @@ export class EscalationService {
   }
 
   async escalateOnSLABreach(
-    ticketId: number,
+    ticketId: string,
     slaBreached: boolean,
   ): Promise<EscalateTicketResponse | { success: false; message: string }> {
     if (!slaBreached) return { success: false, message: 'SLA not breached' };
@@ -87,7 +87,7 @@ export class EscalationService {
   }
 
   async escalateOnReopenThreshold(
-    ticketId: number,
+    ticketId: string,
     reopenCount: number,
     threshold: number = 3,
   ): Promise<EscalateTicketResponse | { success: false; message: string }> {
@@ -101,7 +101,7 @@ export class EscalationService {
     return this.ruleRepo.getRulesForGroup(groupId);
   }
 
-  async getEscalationHistory(ticketId: number): Promise<WorkflowLogRow[]> {
+  async getEscalationHistory(ticketId: string): Promise<WorkflowLogRow[]> {
     const logs = await this.logRepo.getTicketLogs(ticketId);
     return logs.filter((l) => l.action === 'ESCALATED');
   }

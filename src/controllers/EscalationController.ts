@@ -11,7 +11,7 @@ export class EscalationController {
   /** POST /workflow/escalate/:ticketId */
   escalateTicket = async (req: Request, res: Response): Promise<void> => {
     try {
-      const ticketId = parseInt(req.params.ticketId, 10);
+      const ticketId = req.params.ticketId;
       const { triggerType, performedBy, userRole } = req.body;
 
       if (!triggerType) {
@@ -51,7 +51,7 @@ export class EscalationController {
   /** GET /workflow/escalate/:ticketId/history */
   getEscalationHistory = async (req: Request, res: Response): Promise<void> => {
     try {
-      const ticketId = parseInt(req.params.ticketId, 10);
+      const ticketId = req.params.ticketId;
       const history = await this.escalationService.getEscalationHistory(ticketId);
       res.status(200).json({ success: true, data: { ticketId, escalations: history, count: history.length } });
     } catch (error: any) {

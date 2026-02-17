@@ -29,7 +29,7 @@ export interface GroupMemberRow {
 
 export interface WorkflowLogRow {
   id: number;
-  ticket_id: number;
+  ticket_id: string;
   action: WorkflowAction;
   from_group_id: number | null;
   to_group_id: number | null;
@@ -55,7 +55,7 @@ export interface EscalationRuleRow {
 
 export interface TicketRoutingStateRow {
   id: number;
-  ticket_id: number;
+  ticket_id: string;
   current_group_id: number;
   assigned_member_id: number | null;
   status: RoutingStatus;
@@ -67,7 +67,7 @@ export interface TicketRoutingStateRow {
 
 export interface SlaTrackingRow {
   id: number;
-  ticket_id: number;
+  ticket_id: string;
   priority: string | null;
   created_at: Date;
   assigned_at: Date | null;
@@ -102,7 +102,7 @@ export type UserRole = 'JUNIOR' | 'SENIOR' | 'SUPERVISOR' | 'HEAD_OF_IT';
 // ---------- Request DTOs ----------
 
 export interface RouteTicketRequest {
-  ticketId: number;
+  ticketId: string;
   building: string;
   floor: number;
 }
@@ -151,17 +151,17 @@ export interface CreateEscalationRuleRequest {
 
 export interface RouteTicketResponse {
   success: boolean;
-  ticketId: number;
+  ticketId: string;
   groupId: number;
   groupName: string;
   building: string;
   floor: number;
-  routing_state: { id: number; ticket_id: number; current_group_id: number };
+  routing_state: { id: number; ticket_id: string; current_group_id: number };
 }
 
 export interface ClaimTicketResponse {
   success: boolean;
-  ticketId: number;
+  ticketId: string;
   claimedBy: number;
   memberId: number;
   groupId: number;
@@ -170,7 +170,7 @@ export interface ClaimTicketResponse {
 
 export interface ReassignTicketResponse {
   success: boolean;
-  ticketId: number;
+  ticketId: string;
   fromGroup: string;
   toGroup: string;
   toMember: number;
@@ -180,7 +180,7 @@ export interface ReassignTicketResponse {
 
 export interface EscalateTicketResponse {
   success: boolean;
-  ticketId: number;
+  ticketId: string;
   fromGroup: string;
   toGroup: string;
   escalationCount: number;

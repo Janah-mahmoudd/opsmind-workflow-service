@@ -40,13 +40,13 @@ export async function getUserRole(userId: number): Promise<{ role: string }> {
 
 // ---------- Ticket Service Helpers ----------
 
-export async function getTicket(ticketId: number): Promise<ExternalTicket> {
+export async function getTicket(ticketId: string): Promise<ExternalTicket> {
   const { data } = await ticketServiceClient.get<ExternalTicket>(`/tickets/${ticketId}`);
   return data;
 }
 
 export async function assignTicket(
-  ticketId: number,
+  ticketId: string,
   userId: number,
   status: string = 'IN_PROGRESS',
 ): Promise<any> {
@@ -57,12 +57,12 @@ export async function assignTicket(
   return data;
 }
 
-export async function updateTicketStatus(ticketId: number, status: string): Promise<any> {
+export async function updateTicketStatus(ticketId: string, status: string): Promise<any> {
   const { data } = await ticketServiceClient.patch(`/tickets/${ticketId}/status`, { status });
   return data;
 }
 
-export async function escalateTicket(ticketId: number, escalatedTo: number): Promise<any> {
+export async function escalateTicket(ticketId: string, escalatedTo: number): Promise<any> {
   const { data } = await ticketServiceClient.patch(`/tickets/${ticketId}/escalate`, {
     escalated_to: escalatedTo,
   });

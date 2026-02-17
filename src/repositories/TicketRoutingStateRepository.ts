@@ -12,9 +12,9 @@ interface RoutingStateRowData extends TicketRoutingStateRow, RowDataPacket {}
  */
 export class TicketRoutingStateRepository {
   async createRoutingState(
-    ticketId: number,
+    ticketId: string,
     groupId: number,
-  ): Promise<{ id: number; ticket_id: number; current_group_id: number }> {
+  ): Promise<{ id: number; ticket_id: string; current_group_id: number }> {
     const sql = `
       INSERT INTO ticket_routing_state (ticket_id, current_group_id, status)
       VALUES (?, ?, 'UNASSIGNED')
@@ -23,7 +23,7 @@ export class TicketRoutingStateRepository {
     return { id: result.insertId, ticket_id: ticketId, current_group_id: groupId };
   }
 
-  async getByTicketId(ticketId: number): Promise<TicketRoutingStateRow | null> {
+  async getByTicketId(ticketId: string): Promise<TicketRoutingStateRow | null> {
     const sql = `SELECT * FROM ticket_routing_state WHERE ticket_id = ?`;
     const rows = await query<RoutingStateRowData[]>(sql, [ticketId]);
     return rows[0] ?? null;
@@ -33,7 +33,7 @@ export class TicketRoutingStateRepository {
    * Claim ticket (CONCURRENCY-SAFE)
    * Atomic UPDATE with WHERE status = 'UNASSIGNED' prevents race conditions.
    */
-  async claimTicket(ticketId: number, memberId: number): Promise<boolean> {
+  async claimTicket(ticketId: string, memberId: number): Promise<boolean> {
     const connection = await getConnection();
 
     try {
@@ -62,7 +62,7 @@ export class TicketRoutingStateRepository {
     }
   }
 
-  async reassignTicket(ticketId: number, toMemberId: number, toGroupId: number): Promise<void> {
+  async reassignTicket(ticketId: string, toMemberId: number, toGroupId: number): Promise<void> {
     const sql = `
       UPDATE ticket_routing_state
       SET assigned_member_id = ?, current_group_id = ?, status = 'ASSIGNED', updated_at = CURRENT_TIMESTAMP
@@ -71,7 +71,7 @@ export class TicketRoutingStateRepository {
     await execute(sql, [toMemberId, toGroupId, ticketId]);
   }
 
-  async escalateTicket(ticketId: number, toGroupId: number): Promise<boolean> {
+  async escalateTicket(ticketId: string, toGroupId: number): Promise<boolean> {
     const sql = `
       UPDATE ticket_routing_state
       SET current_group_id = ?, status = 'ESCALATED',
@@ -85,7 +85,7 @@ export class TicketRoutingStateRepository {
     return result.affectedRows > 0;
   }
 
-  async updateStatus(ticketId: number, status: RoutingStatus): Promise<void> {
+  async updateStatus(ticketId: string, status: RoutingStatus): Promise<void> {
     const sql = `
       UPDATE ticket_routing_state
       SET status = ?, updated_at = CURRENT_TIMESTAMP
@@ -94,7 +94,7 @@ export class TicketRoutingStateRepository {
     await execute(sql, [status, ticketId]);
   }
 
-  async getEscalationCount(ticketId: number): Promise<number> {
+  async getEscalationCount(ticketId: string): Promise<number> {
     const sql = `SELECT escalation_count FROM ticket_routing_state WHERE ticket_id = ?`;
     const rows = await query<RoutingStateRowData[]>(sql, [ticketId]);
     return rows[0]?.escalation_count ?? 0;

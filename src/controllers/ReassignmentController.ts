@@ -11,7 +11,7 @@ export class ReassignmentController {
   /** POST /workflow/reassign/:ticketId */
   reassignTicket = async (req: Request, res: Response): Promise<void> => {
     try {
-      const ticketId = parseInt(req.params.ticketId, 10);
+      const ticketId = req.params.ticketId;
       const { userId, toMemberId, userRole, userBuilding } = req.body;
 
       if (!userId || !toMemberId || !userRole) {
@@ -43,7 +43,7 @@ export class ReassignmentController {
   /** GET /workflow/reassign/:ticketId/targets */
   getReassignmentTargets = async (req: Request, res: Response): Promise<void> => {
     try {
-      const ticketId = parseInt(req.params.ticketId, 10);
+      const ticketId = req.params.ticketId;
       const { groupId, userRole, userBuilding } = req.query;
 
       if (!groupId || !userRole) {

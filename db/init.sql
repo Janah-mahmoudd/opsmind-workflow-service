@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS group_members (
 -- Immutable audit trail of all workflow actions
 CREATE TABLE IF NOT EXISTS workflow_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  ticket_id INT NOT NULL,
+  ticket_id VARCHAR(36) NOT NULL,
   action ENUM('CREATED', 'ROUTED', 'CLAIMED', 'REASSIGNED', 'ESCALATED', 'RESOLVED', 'CLOSED', 'REOPENED') NOT NULL,
   from_group_id INT,
   to_group_id INT,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS escalation_rules (
 -- Tracks current routing state (not the actual ticket)
 CREATE TABLE IF NOT EXISTS ticket_routing_state (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  ticket_id INT NOT NULL UNIQUE,
+  ticket_id VARCHAR(36) NOT NULL UNIQUE,
   current_group_id INT NOT NULL,
   assigned_member_id INT,
   status ENUM('UNASSIGNED', 'ASSIGNED', 'ESCALATED') DEFAULT 'UNASSIGNED',
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS ticket_routing_state (
 -- Monitors SLA compliance
 CREATE TABLE IF NOT EXISTS sla_tracking (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  ticket_id INT NOT NULL UNIQUE,
+  ticket_id VARCHAR(36) NOT NULL UNIQUE,
   priority VARCHAR(50),
   created_at TIMESTAMP,
   assigned_at TIMESTAMP NULL,

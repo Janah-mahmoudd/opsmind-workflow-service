@@ -15,7 +15,7 @@ export class ClaimService {
   private memberRepo = new GroupMemberRepository();
   private logRepo = new WorkflowLogRepository();
 
-  async claimTicket(ticketId: number, userId: number): Promise<ClaimTicketResponse> {
+  async claimTicket(ticketId: string, userId: number): Promise<ClaimTicketResponse> {
     // 1. Check routing state
     const routingState = await this.routingRepo.getByTicketId(ticketId);
     if (!routingState) {
@@ -62,7 +62,7 @@ export class ClaimService {
     };
   }
 
-  async isTicketClaimed(ticketId: number): Promise<boolean> {
+  async isTicketClaimed(ticketId: string): Promise<boolean> {
     const state = await this.routingRepo.getByTicketId(ticketId);
     return !!state && state.status !== 'UNASSIGNED';
   }

@@ -10,7 +10,7 @@ export class ClaimController {
   /** POST /workflow/claim/:ticketId */
   claimTicket = async (req: Request, res: Response): Promise<void> => {
     try {
-      const ticketId = parseInt(req.params.ticketId, 10);
+      const ticketId = req.params.ticketId;
       const { userId } = req.body;
 
       if (!userId) {
@@ -35,7 +35,7 @@ export class ClaimController {
   /** GET /workflow/claim/:ticketId/status */
   getClaimStatus = async (req: Request, res: Response): Promise<void> => {
     try {
-      const ticketId = parseInt(req.params.ticketId, 10);
+      const ticketId = req.params.ticketId;
       const claimed = await this.claimService.isTicketClaimed(ticketId);
       res.status(200).json({ success: true, data: { ticketId, claimed } });
     } catch (error: any) {

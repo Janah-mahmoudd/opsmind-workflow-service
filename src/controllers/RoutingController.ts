@@ -28,7 +28,7 @@ export class RoutingController {
   /** GET /workflow/ticket/:ticketId/routing */
   getTicketRouting = async (req: Request, res: Response): Promise<void> => {
     try {
-      const ticketId = parseInt(req.params.ticketId, 10);
+      const ticketId = req.params.ticketId;
       const routing = await this.routingService.getTicketRouting(ticketId);
 
       if (!routing) {

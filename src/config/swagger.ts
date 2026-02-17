@@ -104,7 +104,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
           type: 'object',
           properties: {
             id: { type: 'integer', example: 1 },
-            ticket_id: { type: 'integer', example: 101 },
+            ticket_id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
             current_group_id: { type: 'integer', example: 1 },
             assigned_member_id: { type: 'integer', nullable: true, example: null },
             status: { $ref: '#/components/schemas/RoutingStatus' },
@@ -133,7 +133,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
           type: 'object',
           properties: {
             id: { type: 'integer', example: 1 },
-            ticket_id: { type: 'integer', example: 101 },
+            ticket_id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
             action: { type: 'string', enum: ['CREATED', 'ROUTED', 'CLAIMED', 'REASSIGNED', 'ESCALATED', 'RESOLVED', 'CLOSED', 'REOPENED'] },
             from_group_id: { type: 'integer', nullable: true },
             to_group_id: { type: 'integer', nullable: true },
@@ -234,7 +234,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
                   type: 'object',
                   required: ['ticketId', 'building', 'floor'],
                   properties: {
-                    ticketId: { type: 'integer', description: 'Ticket ID from Ticket Service', example: 101 },
+                    ticketId: { type: 'string', format: 'uuid', description: 'Ticket ID from Ticket Service (UUID)', example: '550e8400-e29b-41d4-a716-446655440000' },
                     building: { type: 'string', description: 'Building identifier', example: 'A' },
                     floor: { type: 'integer', description: 'Floor number', example: 1 },
                   },
@@ -254,7 +254,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
                       data: {
                         type: 'object',
                         properties: {
-                          ticketId: { type: 'integer', example: 101 },
+                          ticketId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
                           groupId: { type: 'integer', example: 1 },
                           groupName: { type: 'string', example: 'Building-A Floor-1 Support' },
                           building: { type: 'string', example: 'A' },
@@ -263,7 +263,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
                             type: 'object',
                             properties: {
                               id: { type: 'integer', example: 1 },
-                              ticket_id: { type: 'integer', example: 101 },
+                              ticket_id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
                               current_group_id: { type: 'integer', example: 1 },
                             },
                           },
