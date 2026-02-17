@@ -33,13 +33,17 @@ export class RoutingService {
     floor: number,
     priority?: string,
   ): Promise<any> {
-    // 1. Find matching support group
+    // ── Step 1: Validate & find support group ──
+    console.log(`[ROUTING] Step 1: Looking up support group for building=${building}, floor=${floor}, ticket=${ticketId}`);
     const group = await this.groupRepo.getGroupByBuildingAndFloor(building, floor);
     if (!group) {
+      console.error(`[ROUTING] FAIL: No support group for building=${building}, floor=${floor}`);
       throw new Error(`No support group found for building: ${building}, floor: ${floor}`);
     }
+    console.log(`[ROUTING] Step 1 OK: Found group id=${group.id}, name="${group.name}"`);
 
-    // 2. Select an available JUNIOR technician (least current assignments)
+    // ── Step 2: Select least-loaded JUNIOR technician ──
+    console.log(`[ROUTING] Step 2: Selecting least-loaded JUNIOR in group ${group.id}`);
     const techSql = `
       SELECT gm.id AS member_id, gm.user_id
       FROM group_members gm
@@ -56,42 +60,56 @@ export class RoutingService {
     const techs = await query<RowDataPacket[]>(techSql, [group.id]);
 
     if (!techs.length) {
+      console.error(`[ROUTING] FAIL: No available JUNIOR in group "${group.name}"`);
       throw new Error(
         `No available JUNIOR technician in group "${group.name}" (Building: ${building}, Floor: ${floor})`,
       );
     }
 
     const technician = techs[0];
+    console.log(`[ROUTING] Step 2 OK: Selected technician memberId=${technician.member_id}, userId=${technician.user_id}`);
 
-    // 3. Call Ticket Service: PATCH /tickets/{id}
-    //    Maps: JUNIOR → L1, status ASSIGNED → IN_PROGRESS
+    // ── Step 3: PRE-PATCH log ──
+    console.log(`[ROUTING] Step 3: PRE-PATCH — calling PATCH /tickets/${ticketId} on ticket-service`);
+    await this.logRepo.logAction(ticketId, 'ROUTED', {
+      to_group_id: group.id,
+      to_member_id: technician.member_id,
+      reason: `[PRE-PATCH] About to assign ticket to technician userId=${technician.user_id} (L1) via ticket-service`,
+    });
+
+    // ── Step 4: Call Ticket Service PATCH ──
     try {
       await ticketServiceClient.patch(`/tickets/${ticketId}`, {
         assigned_to: String(technician.user_id),
         assigned_to_level: 'L1',
         status: 'IN_PROGRESS',
       });
+      console.log(`[ROUTING] Step 4 OK: Ticket-service PATCH successful`);
     } catch (err: any) {
       const detail = err.response?.data?.message || err.message;
+      console.error(`[ROUTING] Step 4 FAIL: Ticket-service PATCH failed — ${detail}`);
       throw new Error(`Failed to update ticket in Ticket Service: ${detail}`);
     }
 
-    // 4. Save routing state (ASSIGNED with the chosen member)
+    // ── Step 5: Insert routing state ──
+    console.log(`[ROUTING] Step 5: Inserting routing state`);
     const insertSql = `
       INSERT INTO ticket_routing_state
         (ticket_id, current_group_id, assigned_member_id, status, claimed_at)
       VALUES (?, ?, ?, 'ASSIGNED', CURRENT_TIMESTAMP)
     `;
     const result = await execute(insertSql, [ticketId, group.id, technician.member_id]);
+    console.log(`[ROUTING] Step 5 OK: routing_state inserted, id=${result.insertId}`);
 
-    // 5. Create workflow_log entry
+    // ── Step 6: POST-PATCH audit log ──
     await this.logRepo.logAction(ticketId, 'ROUTED', {
       to_group_id: group.id,
       to_member_id: technician.member_id,
-      reason: `Auto-routed to ${group.name} and assigned to technician (user ${technician.user_id})${priority ? ` | priority: ${priority}` : ''}`,
+      reason: `[POST-PATCH] Auto-routed to ${group.name}, assigned to technician userId=${technician.user_id}${priority ? ` | priority: ${priority}` : ''}`,
     });
+    console.log(`[ROUTING] Step 6 OK: Workflow log written — routing complete`);
 
-    // 6. Return result
+    // ── Step 7: Return result ──
     return {
       ticketId,
       groupId: group.id,

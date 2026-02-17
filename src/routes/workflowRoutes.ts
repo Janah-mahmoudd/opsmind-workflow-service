@@ -54,6 +54,83 @@ router.get('/health', async (_req: Request, res: Response): Promise<void> => {
 });
 
 // ══════════════════════════════════════
+//  Debug — Connectivity Check
+//  Calls downstream services and reports reachability
+// ══════════════════════════════════════
+router.get('/debug/connectivity', async (_req: Request, res: Response): Promise<void> => {
+  const services: Record<string, any> = {};
+
+  // 1. Check ticket-service
+  try {
+    const { ticketServiceClient } = await import('../config/externalServices');
+    const start = Date.now();
+    const response = await ticketServiceClient.get('/health');
+    const latency = Date.now() - start;
+    services.ticketService = {
+      status: 'reachable',
+      url: 'http://opsmind-ticket-service:3000/health',
+      httpStatus: response.status,
+      latencyMs: latency,
+      data: response.data,
+    };
+  } catch (error: any) {
+    services.ticketService = {
+      status: 'unreachable',
+      url: 'http://opsmind-ticket-service:3000/health',
+      error: error.code || error.message,
+    };
+  }
+
+  // 2. Check auth-service
+  try {
+    const { authServiceClient } = await import('../config/externalServices');
+    const start = Date.now();
+    const response = await authServiceClient.get('/health');
+    const latency = Date.now() - start;
+    services.authService = {
+      status: 'reachable',
+      url: 'http://opsmind-auth-service:3002/health',
+      httpStatus: response.status,
+      latencyMs: latency,
+      data: response.data,
+    };
+  } catch (error: any) {
+    services.authService = {
+      status: 'reachable-unknown',
+      url: 'http://opsmind-auth-service:3002/health',
+      error: error.code || error.message,
+    };
+  }
+
+  // 3. Check own database
+  try {
+    const { pool } = await import('../config/database');
+    const start = Date.now();
+    await pool.execute('SELECT 1');
+    const latency = Date.now() - start;
+    services.database = {
+      status: 'connected',
+      latencyMs: latency,
+    };
+  } catch (error: any) {
+    services.database = {
+      status: 'disconnected',
+      error: error.code || error.message,
+    };
+  }
+
+  const allOk = Object.values(services).every((s: any) =>
+    s.status === 'reachable' || s.status === 'connected',
+  );
+
+  res.status(allOk ? 200 : 503).json({
+    success: allOk,
+    timestamp: new Date().toISOString(),
+    services,
+  });
+});
+
+// ══════════════════════════════════════
 //  Routing
 // ══════════════════════════════════════
 router.post('/route-ticket', routingCtrl.routeTicket);
