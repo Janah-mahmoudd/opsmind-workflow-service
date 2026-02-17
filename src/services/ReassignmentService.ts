@@ -2,7 +2,6 @@ import { TicketRoutingStateRepository } from '../repositories/TicketRoutingState
 import { SupportGroupRepository } from '../repositories/SupportGroupRepository';
 import { GroupMemberRepository } from '../repositories/GroupMemberRepository';
 import { WorkflowLogRepository } from '../repositories/WorkflowLogRepository';
-import { updateTicketStatus } from '../config/externalServices';
 import { ReassignTicketResponse, UserRole, GroupMemberRow } from '../interfaces/types';
 
 /**
@@ -53,7 +52,19 @@ export class ReassignmentService {
     await this.routingRepo.reassignTicket(ticketId, toMemberId, targetGroup.id);
 
     // ── Notify Ticket Service ──
-    await updateTicketStatus(ticketId, 'REASSIGNED');
+    // Ticket service only knows OPEN|IN_PROGRESS|RESOLVED|CLOSED.
+    // On reassignment we keep IN_PROGRESS and update the assignee.
+    try {
+      const { assignTicket: assignTicketFn, toSupportLevel } = await import('../config/externalServices');
+      await assignTicketFn(
+        ticketId,
+        targetMember.user_id,
+        toSupportLevel(targetMember.role),
+        'IN_PROGRESS',
+      );
+    } catch (err: any) {
+      console.error('Ticket Service PATCH failed on reassignment:', err.response?.data || err.message);
+    }
 
     // ── Audit log ──
     await this.logRepo.logAction(ticketId, 'REASSIGNED', {

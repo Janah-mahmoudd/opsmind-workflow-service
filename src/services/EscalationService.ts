@@ -9,7 +9,7 @@ import {
   WorkflowLogRow,
   EscalationRuleRow,
 } from '../interfaces/types';
-import { ticketServiceClient } from '../config/externalServices';
+import { ticketServiceClient, toSupportLevel, escalateTicketInService } from '../config/externalServices';
 import { query } from '../config/database';
 import { RowDataPacket } from 'mysql2/promise';
 
@@ -56,6 +56,14 @@ export class EscalationService {
     // Tier 1 (room→senior) assigns to a SENIOR; Tier 2 (senior→supervisor) to a SUPERVISOR
     const targetRole = rule.priority >= 2 ? 'SUPERVISOR' : 'SENIOR';
 
+    // Determine the current support level (from) based on what group type the ticket is in
+    const currentLevel = currentGroup.parent_group_id === null
+      ? toSupportLevel('SUPERVISOR')   // top-level group
+      : currentGroup.floor === 0
+        ? toSupportLevel('SENIOR')     // building senior group
+        : toSupportLevel('JUNIOR');    // floor room group
+    const targetLevel = toSupportLevel(targetRole);
+
     // Select the least-loaded member of the target role in the target group
     const techSql = `
       SELECT gm.id AS member_id, gm.user_id
@@ -75,7 +83,7 @@ export class EscalationService {
     // Escalate routing state to target group
     await this.routingRepo.escalateTicket(ticketId, targetGroup.id);
 
-    // If a target member was found, assign them and PATCH ticket service
+    // If a target member was found, assign them and update ticket service
     if (techs.length) {
       const assignee = techs[0];
 
@@ -88,15 +96,26 @@ export class EscalationService {
       const { execute } = await import('../config/database');
       await execute(updateSql, [assignee.member_id, ticketId]);
 
-      // PATCH ticket service with assigned_to + assigned_to_level
+      // 1. POST /tickets/:id/escalate — record the escalation in ticket service
+      try {
+        await escalateTicketInService(
+          ticketId,
+          currentLevel,
+          targetLevel,
+          `Escalated (${triggerType}) from ${currentGroup.name} to ${targetGroup.name}`,
+        );
+      } catch (err: any) {
+        console.error('Ticket Service escalate call failed:', err.response?.data || err.message);
+      }
+
+      // 2. PATCH /tickets/:id — assign to the new member with correct level
       try {
         await ticketServiceClient.patch(`/tickets/${ticketId}`, {
-          assigned_to: assignee.user_id,
-          assigned_to_level: targetRole,
-          status: 'ESCALATED',
+          assigned_to: String(assignee.user_id),
+          assigned_to_level: targetLevel,
         });
       } catch (err: any) {
-        console.error('Ticket Service PATCH failed during escalation:', err.response?.data || err.message);
+        console.error('Ticket Service assignment PATCH failed during escalation:', err.response?.data || err.message);
       }
     }
 

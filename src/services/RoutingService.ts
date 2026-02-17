@@ -64,11 +64,12 @@ export class RoutingService {
     const technician = techs[0];
 
     // 3. Call Ticket Service: PATCH /tickets/{id}
+    //    Maps: JUNIOR → L1, status ASSIGNED → IN_PROGRESS
     try {
       await ticketServiceClient.patch(`/tickets/${ticketId}`, {
-        assigned_to: technician.user_id,
-        assigned_to_level: 'JUNIOR',
-        status: 'ASSIGNED',
+        assigned_to: String(technician.user_id),
+        assigned_to_level: 'L1',
+        status: 'IN_PROGRESS',
       });
     } catch (err: any) {
       const detail = err.response?.data?.message || err.message;

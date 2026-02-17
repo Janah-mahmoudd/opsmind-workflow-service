@@ -4,6 +4,7 @@ import { WorkflowLogRepository } from '../repositories/WorkflowLogRepository';
 import { assignTicket } from '../config/externalServices';
 import { ClaimTicketResponse, TicketRoutingStateRow } from '../interfaces/types';
 
+
 /**
  * Claim Service (TypeScript)
  *
@@ -41,8 +42,8 @@ export class ClaimService {
     // 3. ATOMIC CLAIM — race-condition safe
     await this.routingRepo.claimTicket(ticketId, member.id);
 
-    // 4. Notify Ticket Service
-    await assignTicket(ticketId, userId, 'IN_PROGRESS');
+    // 4. Notify Ticket Service (L1 = JUNIOR level)
+    await assignTicket(ticketId, userId, 'L1', 'IN_PROGRESS');
 
     // 5. Audit log
     await this.logRepo.logAction(ticketId, 'CLAIMED', {
