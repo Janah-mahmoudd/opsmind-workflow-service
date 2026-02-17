@@ -9,6 +9,7 @@ import workflowRoutes from './routes/workflowRoutes';
 import adminRoutes from './routes/adminRoutes';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import { requestLogger } from './middlewares/requestLogger';
+import { optionalAuth } from './middlewares/auth';
 
 /**
  * Express Application Factory (TypeScript)
@@ -47,7 +48,7 @@ export function createApp(): Application {
         status: 'ERROR',
         service: process.env.SERVICE_NAME || 'opsmind-workflow',
         database: 'disconnected',
-        error: error.message,
+        message: error.message,
         timestamp: new Date().toISOString(),
       });
     }
@@ -63,8 +64,11 @@ export function createApp(): Application {
     res.send(swaggerSpec);
   });
 
+  // Workflow routes at /workflow (includes /workflow/health, /workflow/logs, etc.)
   app.use('/workflow', workflowRoutes);
-  app.use('/admin', adminRoutes);
+
+  // Admin routes at /workflow/admin (frontend calls /workflow/admin/support-groups/*)
+  app.use('/workflow/admin', optionalAuth, adminRoutes);
 
   // ── Error Handling ──
   app.use(notFoundHandler);

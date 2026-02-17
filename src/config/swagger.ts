@@ -39,6 +39,11 @@ const swaggerDefinition: swaggerJsdoc.Options = {
       { name: 'Claim', description: 'Claim-on-open (junior technicians)' },
       { name: 'Reassignment', description: 'Ticket reassignment with authority checks' },
       { name: 'Escalation', description: 'Escalation (SLA, manual, critical, reopen)' },
+      { name: 'Workflow Logs', description: 'Workflow action audit logs' },
+      { name: 'Tickets', description: 'Group and technician ticket queries' },
+      { name: 'SLA', description: 'SLA tracking and status' },
+      { name: 'Metrics', description: 'Workflow metrics and analytics' },
+      { name: 'Reports', description: 'SLA and escalation reports' },
       { name: 'Dashboards', description: 'Monitoring & analytics dashboards' },
       { name: 'Admin - Groups', description: 'Support group management' },
       { name: 'Admin - Members', description: 'Group member management' },
@@ -1287,9 +1292,166 @@ const swaggerDefinition: swaggerJsdoc.Options = {
       },
 
       // ══════════════════════════════════════
+      //  Workflow Logs
+      // ══════════════════════════════════════
+      '/workflow/logs/{ticketId}': {
+        get: {
+          tags: ['Workflow Logs'],
+          summary: 'Get workflow action logs for a ticket',
+          operationId: 'getWorkflowLogs',
+          parameters: [
+            { name: 'ticketId', in: 'path', required: true, schema: { type: 'string' }, description: 'Ticket UUID' },
+          ],
+          responses: {
+            200: { description: 'Logs retrieved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
+            500: { description: 'Server error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+
+      // ══════════════════════════════════════
+      //  Group & Technician Tickets
+      // ══════════════════════════════════════
+      '/workflow/group/{groupId}/tickets': {
+        get: {
+          tags: ['Tickets'],
+          summary: 'Get tickets assigned to a support group',
+          operationId: 'getGroupTickets',
+          parameters: [
+            { name: 'groupId', in: 'path', required: true, schema: { type: 'integer' } },
+            { name: 'status', in: 'query', schema: { type: 'string' }, description: 'Filter by status' },
+            { name: 'building', in: 'query', schema: { type: 'string' }, description: 'Filter by building' },
+            { name: 'technicianLevel', in: 'query', schema: { type: 'string' }, description: 'Filter by technician level' },
+          ],
+          responses: {
+            200: { description: 'Tickets retrieved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'array', items: { $ref: '#/components/schemas/TicketRoutingState' } } } } } } },
+            500: { description: 'Server error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+
+      '/workflow/technician/{technicianId}/tickets': {
+        get: {
+          tags: ['Tickets'],
+          summary: 'Get tickets assigned to a technician',
+          operationId: 'getTechnicianTickets',
+          parameters: [
+            { name: 'technicianId', in: 'path', required: true, schema: { type: 'integer' } },
+            { name: 'status', in: 'query', schema: { type: 'string' }, description: 'Filter by status' },
+          ],
+          responses: {
+            200: { description: 'Tickets retrieved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'array', items: { $ref: '#/components/schemas/TicketRoutingState' } } } } } } },
+            500: { description: 'Server error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+
+      // ══════════════════════════════════════
+      //  SLA Status
+      // ══════════════════════════════════════
+      '/workflow/sla/status': {
+        post: {
+          tags: ['SLA'],
+          summary: 'Get SLA status for multiple tickets',
+          operationId: 'getSLAStatus',
+          requestBody: {
+            required: true,
+            content: { 'application/json': { schema: { type: 'object', required: ['ticket_ids'], properties: { ticket_ids: { type: 'array', items: { type: 'string' } } } } } },
+          },
+          responses: {
+            200: { description: 'SLA status retrieved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
+            400: { description: 'Bad request', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+
+      // ══════════════════════════════════════
+      //  Metrics
+      // ══════════════════════════════════════
+      '/workflow/metrics': {
+        get: {
+          tags: ['Metrics'],
+          summary: 'Get comprehensive workflow metrics',
+          operationId: 'getWorkflowMetrics',
+          parameters: [
+            { name: 'start_date', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'end_date', in: 'query', schema: { type: 'string', format: 'date' } },
+          ],
+          responses: {
+            200: { description: 'Metrics retrieved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
+            500: { description: 'Server error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+
+      '/workflow/metrics/team/{groupId}': {
+        get: {
+          tags: ['Metrics'],
+          summary: 'Get team-specific metrics',
+          operationId: 'getTeamMetrics',
+          parameters: [
+            { name: 'groupId', in: 'path', required: true, schema: { type: 'integer' } },
+            { name: 'start_date', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'end_date', in: 'query', schema: { type: 'string', format: 'date' } },
+          ],
+          responses: {
+            200: { description: 'Team metrics retrieved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
+            500: { description: 'Server error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+
+      // ══════════════════════════════════════
+      //  Reports
+      // ══════════════════════════════════════
+      '/workflow/reports/sla': {
+        get: {
+          tags: ['Reports'],
+          summary: 'Get SLA compliance report',
+          operationId: 'getSLAReport',
+          parameters: [
+            { name: 'start_date', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'end_date', in: 'query', schema: { type: 'string', format: 'date' } },
+          ],
+          responses: {
+            200: { description: 'SLA report retrieved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
+            500: { description: 'Server error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+
+      '/workflow/reports/escalations': {
+        get: {
+          tags: ['Reports'],
+          summary: 'Get escalation statistics report',
+          operationId: 'getEscalationReport',
+          parameters: [
+            { name: 'start_date', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'end_date', in: 'query', schema: { type: 'string', format: 'date' } },
+          ],
+          responses: {
+            200: { description: 'Escalation report retrieved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
+            500: { description: 'Server error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+
+      '/workflow/health': {
+        get: {
+          tags: ['Health'],
+          summary: 'Workflow service health check',
+          operationId: 'workflowHealthCheck',
+          responses: {
+            200: { description: 'Service healthy', content: { 'application/json': { schema: { type: 'object', properties: { status: { type: 'string' }, service: { type: 'string' }, database: { type: 'string' }, timestamp: { type: 'string' }, uptime: { type: 'number' } } } } } },
+            500: { description: 'Service unhealthy' },
+          },
+        },
+      },
+
+      // ══════════════════════════════════════
       //  Admin — Support Groups
       // ══════════════════════════════════════
-      '/admin/groups': {
+      '/workflow/admin/support-groups': {
         post: {
           tags: ['Admin - Groups'],
           summary: 'Create a support group',
@@ -1344,7 +1506,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
         },
       },
 
-      '/admin/groups/building/{building}': {
+      '/workflow/admin/groups/building/{building}': {
         get: {
           tags: ['Admin - Groups'],
           summary: 'List groups by building',
@@ -1386,7 +1548,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
         },
       },
 
-      '/admin/groups/{groupId}': {
+      '/workflow/admin/groups/{groupId}': {
         get: {
           tags: ['Admin - Groups'],
           summary: 'Get group by ID',
@@ -1429,7 +1591,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
         },
       },
 
-      '/admin/groups/{groupId}/members': {
+      '/workflow/admin/groups/{groupId}/members': {
         get: {
           tags: ['Admin - Groups'],
           summary: 'List members of a group',
@@ -1474,7 +1636,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
       // ══════════════════════════════════════
       //  Admin — Members
       // ══════════════════════════════════════
-      '/admin/members': {
+      '/workflow/admin/members': {
         post: {
           tags: ['Admin - Members'],
           summary: 'Add a member to a group',
@@ -1539,7 +1701,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
         },
       },
 
-      '/admin/members/{memberId}': {
+      '/workflow/admin/members/{memberId}': {
         get: {
           tags: ['Admin - Members'],
           summary: 'Get member by ID',
@@ -1582,7 +1744,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
         },
       },
 
-      '/admin/members/{memberId}/status': {
+      '/workflow/admin/members/{memberId}/status': {
         patch: {
           tags: ['Admin - Members'],
           summary: 'Update member status',
@@ -1638,7 +1800,7 @@ const swaggerDefinition: swaggerJsdoc.Options = {
       // ══════════════════════════════════════
       //  Admin — Escalation Rules
       // ══════════════════════════════════════
-      '/admin/escalation-rules': {
+      '/workflow/admin/escalation-rules': {
         post: {
           tags: ['Admin - Escalation Rules'],
           summary: 'Create an escalation rule',

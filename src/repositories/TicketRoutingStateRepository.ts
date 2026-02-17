@@ -117,4 +117,73 @@ export class TicketRoutingStateRepository {
     `;
     return query<RoutingStateRowData[]>(sql, [memberId]);
   }
+
+  /** Get group tickets with optional filters */
+  async getGroupTicketsFiltered(
+    groupId: number,
+    filters: { status?: string; building?: string },
+  ): Promise<TicketRoutingStateRow[]> {
+    let sql = `SELECT * FROM ticket_routing_state WHERE current_group_id = ?`;
+    const params: any[] = [groupId];
+
+    if (filters.status) {
+      sql += ` AND status = ?`;
+      params.push(filters.status);
+    }
+
+    sql += ` ORDER BY updated_at DESC`;
+    return query<RoutingStateRowData[]>(sql, params);
+  }
+
+  /** Get technician's tickets with optional status filter */
+  async getTechnicianTickets(
+    technicianUserId: number,
+    status?: string,
+  ): Promise<TicketRoutingStateRow[]> {
+    // Find the member record for this user
+    let sql = `
+      SELECT trs.* FROM ticket_routing_state trs
+      JOIN group_members gm ON trs.assigned_member_id = gm.id
+      WHERE gm.user_id = ?
+    `;
+    const params: any[] = [technicianUserId];
+
+    if (status) {
+      sql += ` AND trs.status = ?`;
+      params.push(status);
+    }
+
+    sql += ` ORDER BY trs.updated_at DESC`;
+    return query<RoutingStateRowData[]>(sql, params);
+  }
+
+  /** Count tickets by status for metrics */
+  async getTicketCountsByStatus(startDate?: string, endDate?: string): Promise<any> {
+    let whereClause = '1=1';
+    const params: any[] = [];
+    if (startDate) { whereClause += ` AND updated_at >= ?`; params.push(startDate); }
+    if (endDate) { whereClause += ` AND updated_at <= ?`; params.push(endDate); }
+
+    const sql = `
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'ASSIGNED' THEN 1 ELSE 0 END) as assigned,
+        SUM(CASE WHEN status = 'UNASSIGNED' THEN 1 ELSE 0 END) as unassigned,
+        SUM(CASE WHEN status = 'ESCALATED' THEN 1 ELSE 0 END) as escalated
+      FROM ticket_routing_state 
+      WHERE ${whereClause}
+    `;
+    const rows = await query<RowDataPacket[]>(sql, params);
+    return rows[0] ?? { total: 0, assigned: 0, unassigned: 0, escalated: 0 };
+  }
+
+  /** Get all tickets (for metrics calculations) */
+  async getAllTickets(startDate?: string, endDate?: string): Promise<TicketRoutingStateRow[]> {
+    let sql = `SELECT * FROM ticket_routing_state WHERE 1=1`;
+    const params: any[] = [];
+    if (startDate) { sql += ` AND updated_at >= ?`; params.push(startDate); }
+    if (endDate) { sql += ` AND updated_at <= ?`; params.push(endDate); }
+    sql += ` ORDER BY updated_at DESC`;
+    return query<RoutingStateRowData[]>(sql, params);
+  }
 }

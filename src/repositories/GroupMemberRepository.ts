@@ -69,4 +69,25 @@ export class GroupMemberRepository {
     `;
     return query<MemberWithGroupRow[]>(sql, [userId]);
   }
+
+  /** Remove a member from a group */
+  async removeMember(memberId: number): Promise<void> {
+    const sql = `DELETE FROM group_members WHERE id = ?`;
+    await execute(sql, [memberId]);
+  }
+
+  /** Get members with user info for a specific group */
+  async getGroupMembersWithInfo(groupId: number): Promise<any[]> {
+    // Since we don't have user table here, return member data
+    // The username can be fetched from auth service if needed
+    const sql = `
+      SELECT gm.id, gm.user_id, gm.group_id, gm.role, 
+             gm.can_assign, gm.can_escalate, gm.status, 
+             gm.joined_at, gm.updated_at
+      FROM group_members gm
+      WHERE gm.group_id = ? AND gm.status = 'ACTIVE'
+      ORDER BY gm.role DESC, gm.joined_at ASC
+    `;
+    return query<RowDataPacket[]>(sql, [groupId]);
+  }
 }

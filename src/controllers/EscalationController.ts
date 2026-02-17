@@ -12,21 +12,20 @@ export class EscalationController {
   escalateTicket = async (req: Request, res: Response): Promise<void> => {
     try {
       const ticketId = req.params.ticketId;
-      const { triggerType, performedBy, userRole } = req.body;
-
-      if (!triggerType) {
-        res.status(400).json({ success: false, error: 'Missing required field: triggerType' });
-        return;
-      }
+      // Frontend sends: { reason, escalated_by }
+      // Support legacy: { triggerType, performedBy, userRole }
+      const triggerType = req.body.triggerType || 'MANUAL';
+      const performedBy = req.body.escalated_by || req.body.performedBy;
+      const userRole = req.body.userRole || req.user?.role || 'SENIOR';
 
       let result;
 
       if (triggerType === 'MANUAL') {
-        if (!userRole) {
-          res.status(400).json({ success: false, error: 'userRole required for manual escalation' });
-          return;
-        }
-        result = await this.escalationService.manualEscalate(ticketId, performedBy, userRole as UserRole);
+        result = await this.escalationService.manualEscalate(
+          ticketId,
+          performedBy ?? null,
+          userRole as UserRole,
+        );
       } else {
         result = await this.escalationService.escalateTicket(
           ticketId,
@@ -40,11 +39,11 @@ export class EscalationController {
       console.error('Escalation error:', error);
 
       if (error.message.includes('does not have')) {
-        res.status(403).json({ success: false, error: error.message });
+        res.status(403).json({ success: false, message: error.message });
         return;
       }
 
-      res.status(400).json({ success: false, error: error.message });
+      res.status(400).json({ success: false, message: error.message });
     }
   };
 
@@ -55,7 +54,7 @@ export class EscalationController {
       const history = await this.escalationService.getEscalationHistory(ticketId);
       res.status(200).json({ success: true, data: { ticketId, escalations: history, count: history.length } });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 
@@ -66,7 +65,7 @@ export class EscalationController {
       const path = await this.escalationService.getEscalationPath(groupId);
       res.status(200).json({ success: true, data: { groupId, escalationRules: path } });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 }

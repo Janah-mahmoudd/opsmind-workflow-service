@@ -12,7 +12,7 @@ export function validateBody(schema: Joi.ObjectSchema) {
 
     if (error) {
       const details = error.details.map((d) => d.message).join(', ');
-      res.status(400).json({ success: false, error: `Validation failed: ${details}` });
+      res.status(400).json({ success: false, message: `Validation failed: ${details}` });
       return;
     }
 
@@ -23,28 +23,30 @@ export function validateBody(schema: Joi.ObjectSchema) {
 // ── Predefined Schemas ──
 
 export const routeTicketSchema = Joi.object({
-  ticketId: Joi.string().uuid().required(),
+  ticketId: Joi.string().required(),
   building: Joi.string().required(),
   floor: Joi.number().integer().required(),
-});
+}).unknown(true);
 
 export const claimTicketSchema = Joi.object({
-  userId: Joi.number().integer().required(),
-});
+  technician_id: Joi.number().integer().optional(),
+  userId: Joi.number().integer().optional(),
+}).or('technician_id', 'userId').unknown(true);
 
 export const reassignTicketSchema = Joi.object({
-  userId: Joi.number().integer().required(),
-  toMemberId: Joi.number().integer().required(),
-  userRole: Joi.string().valid('JUNIOR', 'SENIOR', 'SUPERVISOR', 'HEAD_OF_IT').required(),
+  to_technician_id: Joi.number().integer().optional(),
+  toMemberId: Joi.number().integer().optional(),
+  reassigned_by: Joi.number().integer().optional(),
+  userId: Joi.number().integer().optional(),
+  reason: Joi.string().optional(),
+  userRole: Joi.string().optional(),
   userBuilding: Joi.string().optional(),
-});
+}).or('to_technician_id', 'toMemberId').unknown(true);
 
 export const escalateTicketSchema = Joi.object({
-  triggerType: Joi.string().valid('SLA', 'MANUAL', 'CRITICAL', 'REOPEN_COUNT').required(),
+  reason: Joi.string().optional(),
+  escalated_by: Joi.number().integer().optional(),
+  triggerType: Joi.string().valid('SLA', 'MANUAL', 'CRITICAL', 'REOPEN_COUNT').optional(),
   performedBy: Joi.number().integer().optional(),
-  userRole: Joi.when('triggerType', {
-    is: 'MANUAL',
-    then: Joi.string().valid('SENIOR', 'SUPERVISOR').required(),
-    otherwise: Joi.string().optional(),
-  }),
-});
+  userRole: Joi.string().optional(),
+}).unknown(true);

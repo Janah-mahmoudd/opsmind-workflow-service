@@ -76,4 +76,50 @@ export class SupportGroupRepository {
     `;
     return query<GroupMemberRowData[]>(sql, [groupId]);
   }
+
+  /** Get all active support groups with member count */
+  async getAllGroupsWithMemberCount(): Promise<any[]> {
+    const sql = `
+      SELECT sg.*, 
+        (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = sg.id AND gm.status = 'ACTIVE') as member_count
+      FROM support_groups sg
+      WHERE sg.is_active = TRUE
+      ORDER BY sg.building ASC, sg.floor ASC
+    `;
+    return query<RowDataPacket[]>(sql, []);
+  }
+
+  /** Get all active support groups */
+  async getAllGroups(): Promise<SupportGroupRow[]> {
+    const sql = `SELECT * FROM support_groups WHERE is_active = TRUE ORDER BY building ASC, floor ASC`;
+    return query<SupportGroupRowData[]>(sql, []);
+  }
+
+  /** Update a support group */
+  async updateGroup(
+    groupId: number,
+    data: { name?: string; building?: string; floor?: number; parent_group_id?: number | null },
+  ): Promise<void> {
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+    if (data.building !== undefined) { fields.push('building = ?'); values.push(data.building); }
+    if (data.floor !== undefined) { fields.push('floor = ?'); values.push(data.floor); }
+    if (data.parent_group_id !== undefined) { fields.push('parent_group_id = ?'); values.push(data.parent_group_id); }
+
+    if (fields.length === 0) return;
+
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(groupId);
+
+    const sql = `UPDATE support_groups SET ${fields.join(', ')} WHERE id = ?`;
+    await execute(sql, values);
+  }
+
+  /** Soft-delete a support group */
+  async deleteGroup(groupId: number): Promise<void> {
+    const sql = `UPDATE support_groups SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+    await execute(sql, [groupId]);
+  }
 }

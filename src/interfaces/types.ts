@@ -19,7 +19,7 @@ export interface GroupMemberRow {
   id: number;
   user_id: number;
   group_id: number;
-  role: 'JUNIOR' | 'SENIOR';
+  role: 'JUNIOR' | 'SENIOR' | 'SUPERVISOR';
   can_assign: boolean;
   can_escalate: boolean;
   status: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
@@ -93,7 +93,7 @@ export type EscalationTrigger = 'SLA' | 'MANUAL' | 'CRITICAL' | 'REOPEN_COUNT';
 
 export type RoutingStatus = 'UNASSIGNED' | 'ASSIGNED' | 'ESCALATED';
 
-export type MemberRole = 'JUNIOR' | 'SENIOR';
+export type MemberRole = 'JUNIOR' | 'SENIOR' | 'SUPERVISOR';
 
 export type MemberStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
 

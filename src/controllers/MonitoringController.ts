@@ -18,7 +18,7 @@ export class MonitoringController {
       const trail = await this.loggingService.getTicketAuditTrail(ticketId);
       res.status(200).json({ success: true, data: trail });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 
@@ -29,7 +29,7 @@ export class MonitoringController {
       const dashboard = await this.dashboardService.getBuildingDashboard(buildingId);
       res.status(200).json({ success: true, data: dashboard });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 
@@ -40,7 +40,7 @@ export class MonitoringController {
       const dashboard = await this.dashboardService.getMemberDashboard(memberId);
       res.status(200).json({ success: true, data: dashboard });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 
@@ -51,7 +51,7 @@ export class MonitoringController {
       const metrics = await this.dashboardService.getGroupMetrics(groupId);
       res.status(200).json({ success: true, data: metrics });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 
@@ -63,7 +63,7 @@ export class MonitoringController {
       const activity = await this.loggingService.getRecentActivity(limit, minutes);
       res.status(200).json({ success: true, data: activity });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 }

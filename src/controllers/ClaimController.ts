@@ -11,10 +11,11 @@ export class ClaimController {
   claimTicket = async (req: Request, res: Response): Promise<void> => {
     try {
       const ticketId = req.params.ticketId;
-      const { userId } = req.body;
+      // Frontend sends { technician_id }, support legacy { userId } too
+      const userId = req.body.technician_id || req.body.userId;
 
       if (!userId) {
-        res.status(400).json({ success: false, error: 'Missing required field: userId' });
+        res.status(400).json({ success: false, message: 'Missing required field: technician_id' });
         return;
       }
 
@@ -24,11 +25,11 @@ export class ClaimController {
       console.error('Claim error:', error);
 
       if (error.message.includes('already claimed')) {
-        res.status(409).json({ success: false, error: error.message });
+        res.status(409).json({ success: false, message: error.message });
         return;
       }
 
-      res.status(400).json({ success: false, error: error.message });
+      res.status(400).json({ success: false, message: error.message });
     }
   };
 
@@ -39,7 +40,7 @@ export class ClaimController {
       const claimed = await this.claimService.isTicketClaimed(ticketId);
       res.status(200).json({ success: true, data: { ticketId, claimed } });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 
@@ -50,7 +51,7 @@ export class ClaimController {
       const tickets = await this.claimService.getUnclaimedTickets(groupId);
       res.status(200).json({ success: true, data: { groupId, unclaimedTickets: tickets, count: tickets.length } });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 }

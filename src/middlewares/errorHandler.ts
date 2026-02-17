@@ -13,7 +13,7 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 
   res.status(statusCode).json({
     success: false,
-    error: message,
+    message: message,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 }
@@ -24,6 +24,6 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 export function notFoundHandler(req: Request, res: Response): void {
   res.status(404).json({
     success: false,
-    error: `Route ${req.method} ${req.originalUrl} not found`,
+    message: `Route ${req.method} ${req.originalUrl} not found`,
   });
 }

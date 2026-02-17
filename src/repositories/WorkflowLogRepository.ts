@@ -68,4 +68,36 @@ export class WorkflowLogRepository {
     `;
     return query<WorkflowLogRowData[]>(sql, [minutesBack, limit]);
   }
+
+  /** Get escalation statistics for reporting */
+  async getEscalationStats(startDate?: string, endDate?: string): Promise<any[]> {
+    let whereClause = `action = 'ESCALATED'`;
+    const params: any[] = [];
+    if (startDate) { whereClause += ` AND created_at >= ?`; params.push(startDate); }
+    if (endDate) { whereClause += ` AND created_at <= ?`; params.push(endDate); }
+
+    const sql = `
+      SELECT 
+        from_group_id,
+        to_group_id,
+        COUNT(*) as count,
+        MIN(created_at) as first_escalation,
+        MAX(created_at) as last_escalation
+      FROM workflow_logs
+      WHERE ${whereClause}
+      GROUP BY from_group_id, to_group_id
+      ORDER BY count DESC
+    `;
+    return query<RowDataPacket[]>(sql, params);
+  }
+
+  /** Get total count of a specific action */
+  async getActionCount(action: WorkflowAction, startDate?: string, endDate?: string): Promise<number> {
+    let sql = `SELECT COUNT(*) as count FROM workflow_logs WHERE action = ?`;
+    const params: any[] = [action];
+    if (startDate) { sql += ` AND created_at >= ?`; params.push(startDate); }
+    if (endDate) { sql += ` AND created_at <= ?`; params.push(endDate); }
+    const rows = await query<RowDataPacket[]>(sql, params);
+    return rows[0]?.count ?? 0;
+  }
 }

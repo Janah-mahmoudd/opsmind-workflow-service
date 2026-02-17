@@ -49,11 +49,14 @@ export async function assignTicket(
   ticketId: string,
   userId: number,
   status: string = 'IN_PROGRESS',
+  assignedToLevel?: string,
 ): Promise<any> {
-  const { data } = await ticketServiceClient.patch(`/tickets/${ticketId}/assign`, {
+  const body: Record<string, any> = {
     assigned_to: userId,
     status,
-  });
+  };
+  if (assignedToLevel) body.assigned_to_level = assignedToLevel;
+  const { data } = await ticketServiceClient.patch(`/tickets/${ticketId}/assign`, body);
   return data;
 }
 
