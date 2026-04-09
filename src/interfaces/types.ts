@@ -27,6 +27,14 @@ export interface GroupMemberRow {
   updated_at: Date;
 }
 
+export interface TechnicianRow {
+  id: number;
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+  status: TechnicianStatus;
+}
+
 export interface WorkflowLogRow {
   id: number;
   ticket_id: string;
@@ -98,6 +106,7 @@ export type MemberRole = 'JUNIOR' | 'SENIOR' | 'SUPERVISOR';
 export type MemberStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
 
 export type UserRole = 'JUNIOR' | 'SENIOR' | 'SUPERVISOR' | 'HEAD_OF_IT';
+export type TechnicianStatus = 'ONLINE' | 'OFFLINE';
 
 // ---------- Request DTOs ----------
 
@@ -186,6 +195,25 @@ export interface EscalateTicketResponse {
   escalationCount: number;
   triggerType: string;
   message: string;
+}
+
+// ---------- Events ----------
+
+export type TicketPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+
+export interface TicketCreatedEvent {
+  ticket_id: string;
+  latitude: number;
+  longitude: number;
+  priority?: TicketPriority;
+}
+
+export interface TicketAssignedEvent {
+  ticket_id: string;
+  technician_id: number;
+  distance_km: number;
+  workload: number;
+  score: number;
 }
 
 // ---------- Workflow Log Data ----------

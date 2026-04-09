@@ -4,11 +4,13 @@ import { ClaimController } from '../controllers/ClaimController';
 import { ReassignmentController } from '../controllers/ReassignmentController';
 import { EscalationController } from '../controllers/EscalationController';
 import { MonitoringController } from '../controllers/MonitoringController';
+import { TechnicianController } from '../controllers/TechnicianController';
 import { LoggingService } from '../services/LoggingService';
 import { TicketRoutingStateRepository } from '../repositories/TicketRoutingStateRepository';
 import { SlaTrackingRepository } from '../repositories/SlaTrackingRepository';
 import { MetricsService } from '../services/MetricsService';
 import { optionalAuth } from '../middlewares/auth';
+import { validateBody, updateTechnicianLocationSchema } from '../middlewares/validation';
 
 const router = Router();
 
@@ -18,6 +20,7 @@ const claimCtrl = new ClaimController();
 const reassignCtrl = new ReassignmentController();
 const escalationCtrl = new EscalationController();
 const monitorCtrl = new MonitoringController();
+const technicianCtrl = new TechnicianController();
 
 // ── Service / Repo instances for new endpoints ──
 const loggingService = new LoggingService();
@@ -225,6 +228,16 @@ router.get('/technician/:technicianId/tickets', async (req: Request, res: Respon
 });
 
 // ══════════════════════════════════════
+// ------------------------------
+//  Technician Location Update (NEW)
+//  PUT /workflow/technicians/location
+// ------------------------------
+router.put(
+  '/technicians/location',
+  validateBody(updateTechnicianLocationSchema),
+  technicianCtrl.updateLocation,
+);
+
 //  SLA Status (NEW — frontend calls this)
 //  POST /workflow/sla/status  body: { ticket_ids: [...] }
 // ══════════════════════════════════════
