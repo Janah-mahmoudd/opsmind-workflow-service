@@ -49,26 +49,81 @@ export class TicketRepository {
     return map;
   }
 
-  async isAlreadyAssigned(ticketId: string): Promise<boolean> {
+  /**
+   * Check if ticket is already assigned.
+   * Returns ticket info if assigned (assigned_to set OR status not OPEN),
+   * otherwise returns null.
+   */
+  async isAlreadyAssigned(ticketId: string): Promise<{ assigned_to: number | null; status: string } | null> {
     const rows = await query<RowDataPacket[]>(
-      `SELECT assigned_to FROM tickets WHERE id = ? AND assigned_to IS NOT NULL LIMIT 1`,
+      `SELECT assigned_to, status FROM tickets WHERE id = ? LIMIT 1`,
       [ticketId],
     );
-    return rows.length > 0;
+    
+    if (rows.length === 0) {
+      return null; // Ticket doesn't exist yet
+    }
+
+    const ticket = rows[0];
+    // Consider assigned if either:
+    // 1. assigned_to is set, OR
+    // 2. status is not OPEN (IN_PROGRESS, RESOLVED, CLOSED)
+    if (ticket.assigned_to !== null || ticket.status !== 'OPEN') {
+      return {
+        assigned_to: ticket.assigned_to,
+        status: ticket.status,
+      };
+    }
+
+    return null; // Not assigned
   }
 
+  /**
+   * Assign ticket to technician.
+   * Only updates if ticket is currently OPEN and unassigned (race-condition safe).
+   * Throws error if ticket not found or already assigned.
+   */
   async assignTicket(ticketId: string, technicianId: number): Promise<void> {
     const result = await execute(
       `
         UPDATE tickets
         SET assigned_to = ?, status = 'IN_PROGRESS'
-        WHERE id = ?
+        WHERE id = ? AND assigned_to IS NULL AND status = 'OPEN'
       `,
       [technicianId, ticketId],
     );
 
     if (result.affectedRows === 0) {
-      throw new Error(`Ticket ${ticketId} not found`);
+      // Check why update failed
+      const existing = await query<RowDataPacket[]>(
+        `SELECT id, assigned_to, status FROM tickets WHERE id = ?`,
+        [ticketId],
+      );
+      
+      if (existing.length === 0) {
+        throw new Error(`Ticket ${ticketId} not found`);
+      }
+      
+      const ticket = existing[0];
+      if (ticket.assigned_to !== null) {
+        console.warn(
+          `[TicketRepository] Assignment blocked: ticket ${ticketId} already assigned to ${ticket.assigned_to}`,
+        );
+        throw new Error(`Ticket ${ticketId} already assigned to technician ${ticket.assigned_to}`);
+      }
+      
+      if (ticket.status !== 'OPEN') {
+        console.warn(
+          `[TicketRepository] Assignment blocked: ticket ${ticketId} status is ${ticket.status} (not OPEN)`,
+        );
+        throw new Error(`Ticket ${ticketId} status is ${ticket.status}, cannot assign`);
+      }
+      
+      throw new Error(`Failed to assign ticket ${ticketId} for unknown reason`);
     }
+
+    console.log(
+      `[TicketRepository] ✔ Ticket ${ticketId} assigned to technician ${technicianId}, status → IN_PROGRESS`,
+    );
   }
 }

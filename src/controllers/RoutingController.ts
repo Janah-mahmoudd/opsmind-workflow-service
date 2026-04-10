@@ -4,6 +4,9 @@ import { AssignmentService } from '../services/AssignmentService';
 
 /**
  * Routing Controller (TypeScript)
+ *
+ * Handles ticket assignment and routing state queries.
+ * Assignment is location-based (coordinates + workload), not building/floor-based.
  */
 export class RoutingController {
   private routingService = new RoutingService();

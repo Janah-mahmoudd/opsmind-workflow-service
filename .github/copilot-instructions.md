@@ -1,18 +1,18 @@
 # OpsMind Workflow Service
 
-Ticket assignment and routing orchestrator for university IT management. Automatically routes tickets to support groups based on building/floor location, assigns to optimal technicians using proximity + workload scoring, and manages multi-tier escalation chains with SLA tracking.
+Ticket assignment and workflow orchestrator for university IT management. Assigns tickets to optimal technicians using location-based scoring (haversine distance + workload), and manages multi-tier escalation chains with SLA tracking. Support groups are used for claim/escalation/reassignment workflows, not for initial assignment.
 
 ## Architecture
 
 **Layered architecture** with clear separation:
 - **Controllers** → HTTP request handling, validation
-- **Services** → Business logic (routing, assignment, escalation, claiming, reassignment)
+- **Services** → Business logic (assignment, escalation, claiming, reassignment)
 - **Repositories** → Data access layer (thin wrappers over raw SQL)
 - **Middleware** → Auth, validation, logging, error handling
 - **Background Jobs** → RabbitMQ consumer (ticket.created), SLA monitor (60s interval)
 
 Key reference files:
-- [src/services/RoutingService.ts](../src/services/RoutingService.ts) - Exemplifies service orchestration pattern
+- [src/services/AssignmentService.ts](../src/services/AssignmentService.ts) - Location-based assignment with priority-weighted scoring
 - [src/repositories/SupportGroupRepository.ts](../src/repositories/SupportGroupRepository.ts) - Repository pattern with dynamic SQL building
 - [src/middlewares/auth.ts](../src/middlewares/auth.ts) - JWT authentication and RBAC implementation
 
@@ -107,11 +107,11 @@ Global handler in [middlewares/errorHandler.ts](../src/middlewares/errorHandler.
 
 ## Key Domain Concepts
 
-- **Routing:** Building+floor → SupportGroup → least-loaded JUNIOR technician
-- **Assignment Scoring:** `score = distance_km + current_workload` (lower wins)
-- **Claiming:** Technicians self-assign unassigned tickets in their group
-- **Reassignment:** Transfer between members (role-based restrictions)
-- **Escalation:** Two-tier chain (Floor→Building Senior→University Supervisor) triggered by SLA/MANUAL/CRITICAL/REOPEN_COUNT
+- **Assignment:** Location-based with priority-weighted scoring: `score = weights.distance * norm_distance + weights.workload * norm_workload` (lower wins). Technicians are selected by coordinates, not building/floor.
+- **Priority Weights:** CRITICAL/HIGH favor proximity (0.7 distance, 0.3 workload), MEDIUM balanced (0.5/0.5), LOW favors least-busy (0.3 distance, 0.7 workload)
+- **Claiming:** Technicians self-assign unassigned tickets in their group (uses support groups for workflow management)
+- **Reassignment:** Transfer between members (role-based restrictions, uses support groups)
+- **Escalation:** Two-tier chain (Floor→Building Senior→University Supervisor) triggered by SLA/MANUAL/CRITICAL/REOPEN_COUNT (uses support groups)
 - **SLA Priorities:** CRITICAL(60min), HIGH(120min), MEDIUM(240min), LOW(480min)
 
 ## Common Pitfalls

@@ -110,12 +110,6 @@ export type TechnicianStatus = 'ONLINE' | 'OFFLINE';
 
 // ---------- Request DTOs ----------
 
-export interface RouteTicketRequest {
-  ticketId: string;
-  building: string;
-  floor: number;
-}
-
 export interface ClaimTicketRequest {
   userId: number;
 }
@@ -157,16 +151,6 @@ export interface CreateEscalationRuleRequest {
 }
 
 // ---------- Response DTOs ----------
-
-export interface RouteTicketResponse {
-  success: boolean;
-  ticketId: string;
-  groupId: number;
-  groupName: string;
-  building: string;
-  floor: number;
-  routing_state: { id: number; ticket_id: string; current_group_id: number };
-}
 
 export interface ClaimTicketResponse {
   success: boolean;

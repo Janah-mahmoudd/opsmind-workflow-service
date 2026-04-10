@@ -54,10 +54,11 @@ export class AssignmentService {
 
     // Idempotency guard: skip if already assigned (handles duplicate RabbitMQ delivery
     // and the race between the RabbitMQ consumer and the REST /route-ticket endpoint).
-    const alreadyAssigned = await this.ticketRepo.isAlreadyAssigned(event.ticket_id);
-    if (alreadyAssigned) {
+    const assignmentCheck = await this.ticketRepo.isAlreadyAssigned(event.ticket_id);
+    if (assignmentCheck) {
       console.log(
-        `[AssignmentService] Skipping assignment: ticket ${event.ticket_id} is already assigned.`,
+        `[AssignmentService] ⚠ Skipping assignment: ticket ${event.ticket_id} already assigned | ` +
+          `assigned_to=${assignmentCheck.assigned_to ?? 'null'} | status=${assignmentCheck.status}`,
       );
       return null;
     }
@@ -147,10 +148,20 @@ export class AssignmentService {
         `workload=${best.workload} | final score=${best.score.toFixed(4)}`,
     );
 
-    // 6. Update local DB first (workload tracking — always required)
+    // 6. Final race-condition guard: verify ticket is still unassigned before committing
+    const finalCheck = await this.ticketRepo.isAlreadyAssigned(event.ticket_id);
+    if (finalCheck) {
+      console.log(
+        `[AssignmentService] ⚠ Race condition detected: ticket ${event.ticket_id} was assigned ` +
+          `during processing | assigned_to=${finalCheck.assigned_to ?? 'null'} | status=${finalCheck.status}`,
+      );
+      return null;
+    }
+
+    // 7. Update local DB first (workload tracking — always required)
     await this.ticketRepo.assignTicket(event.ticket_id, best.id);
 
-    // 7. Notify ticket-service (authoritative store) — non-blocking in local dev
+    // 8. Notify ticket-service (authoritative store) — non-blocking in local dev
     // Live technicians table has no level column; default all to L1.
     const supportLevel = 'L1';
     console.log(
